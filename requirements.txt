@@ -1,0 +1,7 @@
+-f https://download.pytorch.org/whl/torch_stable.html
+-f https://download.pytorch.org/whl/torchaudio_stable.html
+torch==1.13.0+cpu
+torchaudio==0.13.0+cpu
+numpy
+boto3
+soundfile
