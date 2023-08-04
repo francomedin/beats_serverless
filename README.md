@@ -74,3 +74,6 @@ Go to "Monitor" and "View Cloudwatch logs" to observe script logs and final infe
 
 Remember to replace placeholders like `YOUR_BUCKET_NAME`.
 
+7. Next Steps
+
+- Serve the services with a API Gateway instead a S3 Bucket as a Trigger.
