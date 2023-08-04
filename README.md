@@ -1,6 +1,6 @@
 # BEATs Serverless Implementation Guide
 
-In this post, we will walk through a step-by-step guide on implementing BEATs, a state-of-the-art audio classification model, using the "ESC-50" (1st place) and "Audioset" (4th place) datasets.
+In this post, we will walk through a step-by-step guide on implementing ["BEATs"](https://github.com/microsoft/unilm/tree/master/beats), a state-of-the-art audio classification model, using the ["ESC-50"](https://github.com/karolpiczak/ESC-50) (1st place) and ["Audioset"](https://research.google.com/audioset/) (4th place) datasets.
 
 The implementation will leverage AWS serverless tools and Pytorch.
 
