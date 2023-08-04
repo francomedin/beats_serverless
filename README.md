@@ -8,7 +8,7 @@ The implementation will leverage AWS serverless tools and Pytorch.
 
 Here's a graphical representation of the steps we'll follow:
 
-![Graphical Overview](link-to-image)
+![Graphical Overview](architecture.png)
 
 ## Getting Started
 
@@ -62,7 +62,7 @@ docker push 410677554255.dkr.ecr.us-east-1.amazonaws.com/beats_prueba:latest
         }
     ]
 }
-
+```
 6. Lambda Configuration:
 
 Set memory to 1512MB and timeout to 1 minute and 30 seconds.
