@@ -5,3 +5,4 @@ torchaudio==0.13.0+cpu
 numpy
 boto3
 soundfile
+pandas

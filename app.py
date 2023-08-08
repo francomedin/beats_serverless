@@ -1,9 +1,9 @@
 # Python Built-Ins:
-import json
+import pandas as pd
 import logging
 import sys
 import os
-import uuid
+
 
 # External Dependencies:
 import torch
@@ -45,7 +45,9 @@ def download_audio(event):
     logger.info("Download Audio")
     input_bucket_name  = event['Records'][0]['s3']['bucket']['name']
     file_key = event['Records'][0]['s3']['object']['key']
-    local_input_temp_file = "/tmp/" + file_key
+    #local_input_temp_file = "/tmp/" + file_key
+    local_input_temp_file = "/tmp/" + file_key.replace('/','-')
+    logger.info(f"File_name: {local_input_temp_file}")
     s3.download_file(input_bucket_name, file_key, local_input_temp_file)
     audio_path = local_input_temp_file
     return audio_path
@@ -57,11 +59,18 @@ def pre_process(audio_path):
     resampled_waveform = torchaudio.transforms.Resample(original_sr, 16000)(waveform)
     return resampled_waveform
 
+def get_label(label_pred):
+    if type(label_pred) == list:
+        label_pred = label_pred[0]
+    df = pd.read_csv("labels.csv")
+    result = df.loc[df["index"] == label_pred, "display_name"].item()
+    return result
+
 def lambda_handler(event, context):
     # Download model
     model_path = download_model(
-        bucket='YOUR_BUCKET_NAME',
-        key='PATH/TO/MODEL.pt')
+        bucket='beats-data',
+        key='data/BEATs/BEATs_iter3_plus_AS2M.pt')
     # Load model
     model = model_load(model_path=model_path)
     # Download .wav
@@ -74,12 +83,15 @@ def lambda_handler(event, context):
     try:
         with torch.no_grad():
             prediction = model.extract_features(data, padding_mask=None)[0]
-            labels_pred = prediction.topk(k=10)[1].tolist()[0]
-            logger.info(f"Prediction Successfull: {labels_pred}")
+            label_pred = prediction.topk(k=1)[1].tolist()[0][0]
+            logger.info(f"Prediction Successfull: {label_pred}")
+            label = get_label(label_pred)
+            logger.info(f"Label: {label}")
+
 
         return {
             'statusCode': 200,
-            'class': labels_pred
+            'class': label
         }
     except:
         return {
