@@ -1,8 +1,8 @@
 # Python Built-Ins:
-import pandas as pd
 import logging
 import sys
 import os
+import json
 
 
 # External Dependencies:
@@ -10,11 +10,9 @@ import torch
 import torchaudio
 import boto3
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 # Local Dependencies:
 from BEATs import BEATs, BEATsConfig
-s3_resource = boto3.resource('s3')
+#s3_resource = boto3.resource('s3')
 s3 = boto3.client('s3')
 # Logs
 logger = logging.getLogger(__name__)
@@ -22,23 +20,21 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = None
+labels_json = None
 
-def download_model(bucket='', key=''):
-    logger.info("Download model")
-    location = f'/tmp/{os.path.basename(key)}'
-    if not os.path.exists(location):
-        s3_resource.Object(bucket, key).download_file(location)
-    logger.info(f"Model Location: {location} ")
-    
-    return location
 
 def model_load(model_path):
-    logger.info("Loading Model")
-    checkpoint = torch.load(model_path)
-    cfg = BEATsConfig(checkpoint['cfg'])
-    model = BEATs(cfg)
-    model.load_state_dict(checkpoint['model'])
-    model.eval()
+    global model
+    if model is not None:
+        logger.info("Model already loaded")
+    else:
+        logger.info("Loading Model")
+        checkpoint = torch.load(model_path)
+        cfg = BEATsConfig(checkpoint['cfg'])
+        model = BEATs(cfg)
+        model.load_state_dict(checkpoint['model'])
+        model.eval()
     return model
 
 def download_audio(event):
@@ -60,33 +56,40 @@ def pre_process(audio_path):
     return resampled_waveform
 
 def get_label(label_pred):
-    if type(label_pred) == list:
-        label_pred = label_pred[0]
-    df = pd.read_csv("labels.csv")
-    result = df.loc[df["index"] == label_pred, "display_name"].item()
-    return result
+    logger.info("Get Label")
+    global labels_json
+    if labels_json is not None:
+        logger.info("Labels Already Loaded")
+    else:
+        with open("labels.json", "r") as f:
+            logger.info("Reading JSON")
+            json_dict = json.load(f)
+
+    values_list = label_pred[0].tolist()
+    indices_list = label_pred[1][0].tolist() 
+    filtered_labels = {str(index): json_dict[str(index)] for index in indices_list}
+
+    logger.info(f"Json Loaded, continue with result dict")
+    result_dict = {label_name: value for label_name, value in zip(filtered_labels.values(), values_list[0])}
+    json_data = json.dumps(result_dict)
+    
+    return json_data
+    
 
 def lambda_handler(event, context):
-    # Download model
-    model_path = download_model(
-        bucket='beats-data',
-        key='data/BEATs/BEATs_iter3_plus_AS2M.pt')
     # Load model
-    model = model_load(model_path=model_path)
-    # Download .wav
+    model = model_load(os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'BEATs_iter3_plus_AS2M.pt'))
+    # Deal with Audio
     audio_path = download_audio(event)
-    #Pre-process audio
     data = pre_process(audio_path)
     logger.info("Data Ready")
-
-    # classify image
+    # Classify Audio
     try:
         with torch.no_grad():
             prediction = model.extract_features(data, padding_mask=None)[0]
-            label_pred = prediction.topk(k=1)[1].tolist()[0][0]
-            logger.info(f"Prediction Successfull: {label_pred}")
-            label = get_label(label_pred)
-            logger.info(f"Label: {label}")
+        label_pred = prediction.topk(k=5)
+        label = get_label(label_pred)
+        logger.info(f"Label: {label}")
 
 
         return {
