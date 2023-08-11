@@ -67,6 +67,8 @@ def get_label(label_pred):
 
     values_list = label_pred[0].tolist()
     indices_list = label_pred[1][0].tolist() 
+    logger.info(f"Index List: {indices_list} ")
+
     filtered_labels = {str(index): json_dict[str(index)] for index in indices_list}
 
     logger.info(f"Json Loaded, continue with result dict")
