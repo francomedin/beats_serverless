@@ -80,7 +80,7 @@ def get_label(label_pred):
 
 def lambda_handler(event, context):
     # Load model
-    model = model_load(os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'BEATs_iter3_plus_AS2M.pt'))
+    model = model_load(os.path.join(os.environ['LAMBDA_TASK_ROOT'], os.environ['MODEL_NAME']))
     # Deal with Audio
     audio_path = download_audio(event)
     data = pre_process(audio_path)
