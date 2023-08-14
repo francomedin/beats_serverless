@@ -12,7 +12,6 @@ import boto3
 
 # Local Dependencies:
 from BEATs import BEATs, BEATsConfig
-s3_resource = boto3.resource('s3')
 s3 = boto3.client('s3')
 # Logs
 logger = logging.getLogger(__name__)
@@ -31,6 +30,7 @@ def download_model(bucket='', key=''):
     location = f'/tmp/{os.path.basename(key)}'
     try:
         if not os.path.exists(location):
+            s3_resource = boto3.resource('s3')
             s3_resource.Object(bucket, key).download_file(location)
             logger.info(f"Model downloaded and saved at: {location}")
         else:
@@ -88,6 +88,23 @@ def get_label(label_pred):
 
     filtered_labels = {str(index): json_dict[str(index)] for index in indices_list}
 
+    # Get final label
+    for value in indices_list:
+        
+        if value in [20, 404, 520, 151, 515, 522, 429, 199, 50, 433, 344, 34, 413, 244, 155, 245, 242]:
+            return "Speech"
+        elif value in [284, 19, 473, 498, 395, 81, 431, 62, 410]:
+            return "Baby Crying"
+        elif value in [323, 149, 339, 480, 488, 400, 150, 157]:
+            return "Dog"
+        elif value in [335, 221, 336, 277]:
+            return "Cat"
+        else:
+            return "No Value"
+
+
+
+    
     logger.info(f"Json Loaded, continue with result dict")
     result_dict = {label_name: value for label_name, value in zip(filtered_labels.values(), values_list[0])}
     json_data = json.dumps(result_dict)
@@ -115,7 +132,8 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'class': label
+            'class': label,
+            'filename': event['Records'][0]['s3']['object']['key']
         }
     except:
         return {
