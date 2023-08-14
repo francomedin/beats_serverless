@@ -20,7 +20,7 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = None
-labels_json = None
+#labels_json = None
 BUCKET = os.environ['WEIGHTS_BUCKET']
 KEY = os.environ['MODEL_NAME']
 
@@ -41,6 +41,7 @@ def download_model(bucket='', key=''):
 
     return location
 
+
 def model_load(model_path):
     global model
     if model is not None:
@@ -53,6 +54,12 @@ def model_load(model_path):
         model.load_state_dict(checkpoint['model'])
         model.eval()
     return model
+
+# Download and Load model
+path = download_model(BUCKET, KEY)
+model = model_load(BUCKET, KEY)
+
+
 
 def download_audio(event):
     logger.info("Download Audio")
@@ -74,6 +81,7 @@ def pre_process(audio_path):
 
 def get_label(label_pred):
     logger.info("Get Label")
+    """
     global labels_json
     if labels_json is not None:
         logger.info("Labels Already Loaded")
@@ -87,8 +95,17 @@ def get_label(label_pred):
     logger.info(f"Index List: {indices_list} ")
 
     filtered_labels = {str(index): json_dict[str(index)] for index in indices_list}
+    logger.info(f"Labels: {filtered_labels}")
+
+    logger.info(f"Json Loaded, continue with result dict")
+    result_dict = {label_name: value for label_name, value in zip(filtered_labels.values(), values_list[0])}
+    json_data = json.dumps(result_dict)
+    
+    return json_data
+    """
 
     # Get final label
+    indices_list = label_pred[1][0].tolist() 
     for value in indices_list:
         
         if value in [20, 404, 520, 151, 515, 522, 429, 199, 50, 433, 344, 34, 413, 244, 155, 245, 242]:
@@ -103,20 +120,11 @@ def get_label(label_pred):
             return "No Value"
 
 
-
-    
-    logger.info(f"Json Loaded, continue with result dict")
-    result_dict = {label_name: value for label_name, value in zip(filtered_labels.values(), values_list[0])}
-    json_data = json.dumps(result_dict)
-    
-    return json_data
-    
-
 def lambda_handler(event, context):
     # Download model
-    model_path = download_model(bucket=BUCKET, key=KEY)
+    #model_path = download_model(bucket=BUCKET, key=KEY)
     # Load model
-    model = model_load(model_path)
+    #model = model_load(model_path)
     # Deal with Audio
     audio_path = download_audio(event)
     data = pre_process(audio_path)
