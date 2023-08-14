@@ -1,7 +1,7 @@
 -f https://download.pytorch.org/whl/torch_stable.html
 -f https://download.pytorch.org/whl/torchaudio_stable.html
-torch==1.13.0+cpu
-torchaudio==0.13.0+cpu
-numpy==1.24.4
-boto3 == 1.31.24
-soundfile== 0.12.1
+torch == 1.13.0+cpu
+torchaudio == 0.13.0+cpu
+numpy == 1.24.4
+boto3 == 1.28.25
+soundfile == 0.12.1

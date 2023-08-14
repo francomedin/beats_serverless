@@ -12,7 +12,7 @@ import boto3
 
 # Local Dependencies:
 from BEATs import BEATs, BEATsConfig
-#s3_resource = boto3.resource('s3')
+s3_resource = boto3.resource('s3')
 s3 = boto3.client('s3')
 # Logs
 logger = logging.getLogger(__name__)
@@ -23,6 +23,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = None
 labels_json = None
 
+
+
+
+def download_model(bucket='', key=''):
+    location = f'/tmp/{os.path.basename(key)}'
+    try:
+        if not os.path.exists(location):
+            s3_resource.Object(bucket, key).download_file(location)
+            logger.info(f"Model downloaded and saved at: {location}")
+        else:
+            logger.info("Model already exists locally.")
+    except Exception as e:
+        logger.info(f"Error downloading the model: {e}")
+
+
+    return location
 
 def model_load(model_path):
     global model
@@ -79,8 +95,10 @@ def get_label(label_pred):
     
 
 def lambda_handler(event, context):
+    # Download model
+    model_path = download_model(bucket=os.environ["WEIGHTS_BUCKET"], key=os.environ['MODEL_NAME'])
     # Load model
-    model = model_load(os.path.join(os.environ['LAMBDA_TASK_ROOT'], os.environ['MODEL_NAME']))
+    model = model_load(model_path)
     # Deal with Audio
     audio_path = download_audio(event)
     data = pre_process(audio_path)
