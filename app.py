@@ -22,7 +22,8 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = None
 labels_json = None
-
+BUCKET = os.environ['WEIGHTS_BUCKET']
+KEY = os.environ['MODEL_NAME']
 
 
 
@@ -96,7 +97,7 @@ def get_label(label_pred):
 
 def lambda_handler(event, context):
     # Download model
-    model_path = download_model(bucket=os.environ["WEIGHTS_BUCKET"], key=os.environ['MODEL_NAME'])
+    model_path = download_model(bucket=BUCKET, key=KEY)
     # Load model
     model = model_load(model_path)
     # Deal with Audio
