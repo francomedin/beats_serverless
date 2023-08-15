@@ -55,11 +55,6 @@ def model_load(model_path):
         model.eval()
     return model
 
-# Download and Load model
-path = download_model(BUCKET, KEY)
-model = model_load(BUCKET, KEY)
-
-
 
 def download_audio(event):
     logger.info("Download Audio")
@@ -76,6 +71,8 @@ def pre_process(audio_path):
     logger.info("Pre-process")
     torchaudio.set_audio_backend("soundfile")
     waveform, original_sr = torchaudio.load(audio_path)
+    logger.info(f"Sample rate: {original_sr}")
+
     resampled_waveform = torchaudio.transforms.Resample(original_sr, 16000)(waveform)
     return resampled_waveform
 
@@ -105,26 +102,27 @@ def get_label(label_pred):
     """
 
     # Get final label
-    indices_list = label_pred[1][0].tolist() 
-    for value in indices_list:
-        
-        if value in [20, 404, 520, 151, 515, 522, 429, 199, 50, 433, 344, 34, 413, 244, 155, 245, 242]:
+    index_list = label_pred[1][0].tolist() 
+    logger.info(f"Top indexes: {index_list}")
+
+    for value in range(len(index_list)):
+          if index_list[value] in [20, 404, 520, 151, 515, 522, 429, 199, 50, 433, 344, 34, 413, 244, 155, 245, 242]:
             return "Speech"
-        elif value in [284, 19, 473, 498, 395, 81, 431, 62, 410]:
+          elif index_list[value] in [284, 19, 473, 498, 395, 81, 431, 62, 410]:
             return "Baby Crying"
-        elif value in [323, 149, 339, 480, 488, 400, 150, 157]:
+          elif index_list[value] in [323, 149, 339, 480, 488, 400, 150, 157]:
             return "Dog"
-        elif value in [335, 221, 336, 277]:
+          elif index_list[value] in [335, 221, 336, 277]:
             return "Cat"
-        else:
-            return "No Value"
+          elif value == 4:
+            return "No value"
 
 
 def lambda_handler(event, context):
     # Download model
-    #model_path = download_model(bucket=BUCKET, key=KEY)
+    model_path = download_model(bucket=BUCKET, key=KEY)
     # Load model
-    #model = model_load(model_path)
+    model = model_load(model_path)
     # Deal with Audio
     audio_path = download_audio(event)
     data = pre_process(audio_path)

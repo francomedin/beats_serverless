@@ -73,6 +73,7 @@ Go to "Monitor" and "View Cloudwatch logs" to observe script logs and final infe
 
 
 Remember to replace placeholders like `YOUR_BUCKET_NAME`.
+Remember to place your ENVIROMENTAL_VARIABLES in the lambda funciton config.
 
 7. Next Steps
 
