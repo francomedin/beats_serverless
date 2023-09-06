@@ -107,18 +107,27 @@ def get_label(label_pred):
 
     for value in range(len(index_list)):
           if index_list[value] in [20, 404, 520, 151, 515, 522, 429, 199, 50, 433, 344, 34, 413, 244, 155, 245, 242]:
-            return "Speech"
+            return "Conversacion", 202
           elif index_list[value] in [284, 19, 473, 498, 395, 81, 431, 62, 410]:
-            return "Baby Crying"
+            return "Bebe Llorando", 200
           elif index_list[value] in [323, 149, 339, 480, 488, 400, 150, 157]:
-            return "Dog"
+            return "Ladrido", 201
           elif index_list[value] in [335, 221, 336, 277]:
-            return "Cat"
+            return "Maullido", 202
           elif value == 4:
-            return "No value"
+            return "No value", 100
 
 
 def lambda_handler(event, context):
+    request_id = None
+
+    # Attempt to retrieve the AWS request ID from the context
+    try:
+        request_id = context.aws_request_id
+        file_key = event['Records'][0]['s3']['object']['key']
+    except AttributeError:
+        pass
+
     # Download model
     model_path = download_model(bucket=BUCKET, key=KEY)
     # Load model
@@ -132,17 +141,28 @@ def lambda_handler(event, context):
         with torch.no_grad():
             prediction = model.extract_features(data, padding_mask=None)[0]
         label_pred = prediction.topk(k=5)
-        label = get_label(label_pred)
+        label, code = get_label(label_pred)
         logger.info(f"Label: {label}")
 
-
         return {
-            'statusCode': 200,
-            'class': label,
-            'filename': event['Records'][0]['s3']['object']['key']
+        
+            'request_id' : request_id,
+            'records_s3_object_key': file_key,
+            'classification_sound_id': f'{code}',
+            'classification_sound_description': label,
         }
     except:
         return {
             'statusCode': 404,
             'class': None
         }
+    
+
+
+
+ # { "request_id": "899518e5d4704f9e8fa4a500c6bf8389", # harcodear con uuid. request_id = context.aws_request_id
+ #  "records_s3_object_key": "E4AAECA673A1/2023-07-24/E4AAECA673A121690224650_1690224650000_2_1_0/da42510889ec4a5bb638d6baffcce5c6.jpg", # Necesita toda la ruta
+  # "classification_sound_id": "202",
+  # "classification_sound_description": "Perro"}
+
+
