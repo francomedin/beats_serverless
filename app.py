@@ -160,9 +160,3 @@ def lambda_handler(event, context):
 
 
 
- # { "request_id": "899518e5d4704f9e8fa4a500c6bf8389", # harcodear con uuid. request_id = context.aws_request_id
- #  "records_s3_object_key": "E4AAECA673A1/2023-07-24/E4AAECA673A121690224650_1690224650000_2_1_0/da42510889ec4a5bb638d6baffcce5c6.jpg", # Necesita toda la ruta
-  # "classification_sound_id": "202",
-  # "classification_sound_description": "Perro"}
-
-
